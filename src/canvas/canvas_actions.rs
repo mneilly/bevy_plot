@@ -38,7 +38,7 @@ fn spawn_axis_tick_labels(
 
     let label_entity = commands
         .spawn_bundle(Text2dBundle {
-            text: Text::with_section(text, text_style.clone(), text_alignment),
+            text: Text::from_section(text, text_style.clone()),
             transform: Transform::from_translation(position),
             ..Default::default()
         })
@@ -71,7 +71,7 @@ pub(crate) fn update_target(
         let plot_handle = event.plot_handle.clone();
         let plot_entity = event.canvas_entity;
         // if let Some(plot) = materials.get_mut(plot_handle.clone()) {
-        if let Some(plot) = plots.get_mut(plot_handle.clone()) {
+        if let Some(plot) = plots.get_mut(&plot_handle.clone()) {
             //
             // update canvas shader
             if let Some(canvas_mat) = canvas_materials.get_mut(&event.canvas_material_handle) {
@@ -123,10 +123,9 @@ pub(crate) fn update_target(
                     {
                         let label_entity = commands
                             .spawn_bundle(Text2dBundle {
-                                text: Text::with_section(
+                                text: Text::from_section(
                                     target_str,
                                     text_style.clone(),
-                                    text_alignment,
                                 ),
                                 transform: Transform::from_translation(target_position),
                                 ..Default::default()
@@ -159,7 +158,7 @@ pub(crate) fn update_plot_labels(
 
             // if let Some(plot) = materials.get_mut(plot_handle.clone()) {
 
-            if let Some(plot) = plots.get_mut(plot_handle.clone()) {
+            if let Some(plot) = plots.get_mut(&plot_handle.clone()) {
                 if !plot.hide_tick_labels {
                     for entity in plot_label_query.iter() {
                         commands.entity(entity).despawn();
@@ -377,7 +376,7 @@ pub(crate) fn spawn_graph(
 ) {
     for event in spawn_graph_event.iter() {
         let plot_handle = event.plot_handle.clone();
-        let plot = plots.get(plot_handle.clone()).unwrap();
+        let plot = plots.get(&plot_handle.clone()).unwrap();
 
         let material = CanvasMaterial::new(&plot);
 
@@ -385,12 +384,12 @@ pub(crate) fn spawn_graph(
 
         // quad
         let plot_entity = commands
-            .spawn()
-            .insert_bundle(MaterialMesh2dBundle {
-                mesh: Mesh2dHandle(meshes.add(Mesh::from(shape::Quad::new(plot.canvas_size)))),
-                material: canvas_material_handle.clone(),
-                transform: Transform::from_translation(plot.canvas_position.extend(0.0001)),
-                ..Default::default()
+            .spawn(
+                MaterialMesh2dBundle {
+                    mesh: Mesh2dHandle(meshes.add(Mesh::from(shape::Quad::new(plot.canvas_size)))),
+                    material: canvas_material_handle.clone(),
+                    transform: Transform::from_translation(plot.canvas_position.extend(0.0001)),
+                    ..Default::default()
             })
             .insert(event.canvas.clone())
             .insert(event.plot_handle.clone())
@@ -594,6 +593,7 @@ pub(crate) fn adjust_graph_size(
     {
         //
 
+        /*
         if let Some(plot) = my_canvas_mat.get_mut(plot_handle) {
             let delta = cursor.pos_relative_to_click;
             let mut new_transform_scale;
@@ -650,6 +650,7 @@ pub(crate) fn adjust_graph_size(
                 canvas_entity,
             });
         }
+         */
     }
 }
 

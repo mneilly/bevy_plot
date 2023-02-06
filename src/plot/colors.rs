@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
+use crate::Plot;
 
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -20,7 +21,22 @@ pub enum PlotColor {
 
 /// To get a particular color, get the color from the hashmap with a key of the PlotColor enum.
 /// Then get the shade of this color from the Vec of colors, the higher the index the darker the shade.
-pub fn make_color_palette() -> HashMap<PlotColor, Vec<Color>> {
+
+#[derive(Resource, Default)]
+pub struct ColorMap {
+    pub map: HashMap<PlotColor, Vec<Color>>
+}
+
+impl ColorMap {
+    pub fn insert(&mut self, k: PlotColor, v: Vec<Color>) -> Option<Vec<Color>> {
+        self.map.insert(k, v)
+    }
+    pub fn get(&self, k: &PlotColor) -> Option<&Vec<Color>> {
+        self.map.get(k)
+    }
+}
+
+pub fn make_color_palette() -> ColorMap {
     let gray = vec!["d4d2dd", "b4b3b9", "aaa9b1", "9f9ea4", "66656a", "59585e"]
         .iter()
         .map(
@@ -117,7 +133,7 @@ pub fn make_color_palette() -> HashMap<PlotColor, Vec<Color>> {
         )
         .collect::<Vec<Color>>();
 
-    let mut colors = HashMap::new();
+    let mut colors = ColorMap { map: HashMap::new() };
 
     colors.insert(PlotColor::Gray, gray);
     colors.insert(PlotColor::Black, black);

@@ -1,16 +1,18 @@
 use bevy::prelude::*;
 use bevy_plot::*;
 
-use std::collections::HashMap;
-
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            width: 1000.,
-            height: 800.,
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins
+            .set(WindowPlugin {
+                window: WindowDescriptor {
+                    width: 800.,
+                    height: 600.,
+                    ..Default::default()
+                },
+                ..default()
+            })
+        )
         .add_plugin(PlotPlugin)
         .add_startup_system(setup)
         .add_system(change_bezier_metaparameters_at_runtime)
@@ -56,12 +58,12 @@ pub fn change_bezier_metaparameters_at_runtime(
 
 fn setup(
     mut commands: Commands,
-    colors_res: Res<HashMap<PlotColor, Vec<Color>>>,
+    colors_res: Res<ColorMap>,
     mut plots: ResMut<Assets<Plot>>,
     asset_server: Res<AssetServer>,
     mut maybe_font: ResMut<TickLabelFont>,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn(Camera2dBundle::default());
     let font: Handle<Font> = asset_server.load("fonts/Roboto-Bold.ttf");
     maybe_font.maybe_font = Some(font);
 
@@ -79,7 +81,7 @@ fn setup(
     );
 
     let plot_handle = plots.add(plot.clone());
-    commands.spawn().insert(plot_handle);
+    commands.spawn(plot_handle);
 }
 
 pub fn f3(x: f32, t: f32) -> f32 {

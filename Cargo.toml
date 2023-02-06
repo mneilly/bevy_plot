@@ -13,7 +13,8 @@ categories = [
 ]
 
 [dependencies]
-bevy = { version = "0.7.0", default-features = false, features = [ "render", "x11",] }
+bevy = { version = "0.9.1", default-features = false, features = [ "bevy_asset", "render", "x11",] }
+
 itertools-num = "0.1"
 bytemuck = "1.7"
 rand = "0.8"

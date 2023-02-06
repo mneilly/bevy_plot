@@ -1,6 +1,6 @@
 // pub mod canvas;
 pub mod canvas_actions;
-#[allow(unused_imports)]
+
 pub use canvas_actions::*;
 
 use bevy::{
@@ -10,7 +10,7 @@ use bevy::{
     render::{
         render_asset::{PrepareAssetError, RenderAsset},
         render_resource::{
-            std140::{AsStd140, Std140},
+            encase::ShaderType,
             *,
         },
         renderer::RenderDevice,
@@ -18,6 +18,10 @@ use bevy::{
     sprite::Material2d,
     sprite::Material2dPipeline,
 };
+use bevy::reflect::Uuid;
+use bevy::render::render_asset::RenderAssets;
+use bevy::render::texture::FallbackImage;
+use bytemuck::cast_slice;
 
 use crate::plot::*;
 use crate::util::*;
@@ -186,11 +190,12 @@ pub(crate) struct UpdateTargetLabelEvent {
 }
 
 /// Canvas shader parameters
-#[derive(TypeUuid, Debug, Clone, Component, AsStd140)]
+#[derive(AsBindGroup, Debug, Clone, Component, ShaderType, TypeUuid)]
 #[uuid = "1e08866c-0b8a-437e-8bae-38844b21137e"]
 #[allow(non_snake_case)]
 pub(crate) struct CanvasMaterial {
     /// Mouse position in the reference frame of the graph, corresponding to its axes coordinates
+    #[uniform(0)]
     pub mouse_pos: Vec2,
     pub tick_period: Vec2,
 
@@ -306,15 +311,17 @@ impl Plugin for CanvasMesh2dPlugin {
     }
 }
 
-impl Material2d for CanvasMaterial {
-    fn fragment_shader(_asset_server: &AssetServer) -> Option<Handle<Shader>> {
-        let handle_untyped = CANVAS_SHADER_HANDLE.clone();
-        let shader_handle: Handle<Shader> = handle_untyped.typed::<Shader>();
-        Some(shader_handle)
-    }
+/*
+impl AsBindGroup for CanvasMaterial {
+    type Data = ();
 
-    fn bind_group(render_asset: &<Self as RenderAsset>::PreparedAsset) -> &BindGroup {
-        &render_asset.bind_group
+    fn as_bind_group(&self,
+                     layout: &BindGroupLayout,
+                     render_device: &RenderDevice,
+                     images: &RenderAssets<Image>,
+                     fallback_image: &FallbackImage)
+        -> Result<PreparedBindGroup<Self>, AsBindGroupError> {
+
     }
 
     fn bind_group_layout(render_device: &RenderDevice) -> BindGroupLayout {
@@ -333,39 +340,53 @@ impl Material2d for CanvasMaterial {
         })
     }
 }
+*/
 
-impl RenderAsset for CanvasMaterial {
-    type ExtractedAsset = CanvasMaterial;
-    type PreparedAsset = GpuCanvasMaterial;
-    type Param = (SRes<RenderDevice>, SRes<Material2dPipeline<Self>>);
-    fn extract_asset(&self) -> Self::ExtractedAsset {
-        self.clone()
+impl Material2d for CanvasMaterial {
+    fn fragment_shader() -> ShaderRef {
+        let handle_untyped = CANVAS_SHADER_HANDLE.clone();
+        let shader_handle: Handle<Shader> = handle_untyped.typed::<Shader>();
+        ShaderRef::Handle(shader_handle)
     }
-
-    fn prepare_asset(
-        extracted_asset: Self::ExtractedAsset,
-        (render_device, material_pipeline): &mut SystemParamItem<Self::Param>,
-    ) -> Result<Self::PreparedAsset, PrepareAssetError<Self::ExtractedAsset>> {
-        let custom_material_std140 = extracted_asset.as_std140();
-        let custom_material_bytes = custom_material_std140.as_bytes();
-
-        let buffer = render_device.create_buffer_with_data(&BufferInitDescriptor {
-            contents: custom_material_bytes,
-            label: None,
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        });
-        let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-            entries: &[BindGroupEntry {
-                binding: 0,
-                resource: buffer.as_entire_binding(),
-            }],
-            label: None,
-            layout: &material_pipeline.material2d_layout,
-        });
-
-        Ok(GpuCanvasMaterial {
-            _buffer: buffer,
-            bind_group,
-        })
-    }
+    // fn fragment_shader() -> Option<Handle<Shader>> {
+    //     let handle_untyped = CANVAS_SHADER_HANDLE.clone();
+    //     let shader_handle: Handle<Shader> = handle_untyped.typed::<Shader>();
+    //     Some(shader_handle)
+    // }
 }
+
+// impl RenderAsset for CanvasMaterial {
+//     type ExtractedAsset = CanvasMaterial;
+//     type PreparedAsset = GpuCanvasMaterial;
+//     type Param = (SRes<RenderDevice>, SRes<Material2dPipeline<Self>>);
+//     fn extract_asset(&self) -> Self::ExtractedAsset {
+//         self.clone()
+//     }
+//
+//     fn prepare_asset(
+//         extracted_asset: Self::ExtractedAsset,
+//         (render_device, material_pipeline): &mut SystemParamItem<Self::Param>,
+//     ) -> Result<Self::PreparedAsset, PrepareAssetError<Self::ExtractedAsset>> {
+//         // let custom_material_std140 = extracted_asset.as_std140();
+//         // let custom_material_bytes = custom_material_std140.as_bytes();
+//
+//         let buffer = render_device.create_buffer_with_data(&BufferInitDescriptor {
+//             contents: extracted_asset,
+//             label: None,
+//             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+//         });
+//         let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
+//             entries: &[BindGroupEntry {
+//                 binding: 0,
+//                 resource: buffer.as_entire_binding(),
+//             }],
+//             label: None,
+//             layout: &material_pipeline.material2d_layout,
+//         });
+//
+//         Ok(GpuCanvasMaterial {
+//             _buffer: buffer,
+//             bind_group,
+//         })
+//     }
+// }

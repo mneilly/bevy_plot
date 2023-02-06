@@ -13,7 +13,7 @@ fn main() {
 // the canvas will not include the tick labels. See the "markers" example
 // for an instance of loading a font.
 fn setup(mut commands: Commands, mut plots: ResMut<Assets<Plot>>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn(Camera2dBundle::default());
 
     let mut plot = Plot::default();
 
@@ -27,5 +27,5 @@ fn setup(mut commands: Commands, mut plots: ResMut<Assets<Plot>>) {
     plot.plot(ys);
 
     let plot_handle = plots.add(plot.clone());
-    commands.spawn().insert(plot_handle);
+    commands.spawn(plot_handle);
 }

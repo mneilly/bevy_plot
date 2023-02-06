@@ -9,6 +9,7 @@ use bevy::{
 // use crate::markers::SpawnMarkersEvent;
 // use crate::util::*;
 
+#[derive(Resource)]
 pub(crate) struct Cursor {
     pub position: Vec2,
     pub pos_relative_to_click: Vec2,

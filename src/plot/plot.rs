@@ -1,5 +1,7 @@
 use bevy::{
-    prelude::*, reflect::TypeUuid, render::render_resource::std140::AsStd140,
+    prelude::*,
+    reflect::TypeUuid,
+    render::render_resource::encase::ShaderType,
     sprite::Material2dPlugin,
 };
 
@@ -89,7 +91,7 @@ impl Plugin for PlotPlugin {
             // graphics mystery. The markers use intancing and the segments do not.
             // We lose performance because these two systems are not running in
             // parallel.
-            .add_system(markers_setup.exclusive_system().at_end())
+            .add_system(markers_setup.at_end())
             // ...
             ;
     }
@@ -124,6 +126,7 @@ fn do_spawn_plot(
 
 /// Handle to the type of font to use for tick labels. If None is given (default), 
 /// the tick labels are not rendered.
+#[derive(Resource)]
 pub struct TickLabelFont {
     pub maybe_font: Option<Handle<Font>>,
 }
@@ -156,7 +159,7 @@ pub struct BezierCurveNumber(pub usize);
 
 /// Lower and upper bounds for the canvas. The x axis (or horizontal axis) ranges from `lo.x` to `up.x` and 
 /// the `y` axis ranges from `lo.y` to `up.y`.
-#[derive(Debug, Clone, AsStd140)]
+#[derive(Debug, Clone, ShaderType)]
 pub(crate) struct PlotCanvasBounds {
     pub up: Vec2,
     pub lo: Vec2,

@@ -3,12 +3,16 @@ use bevy_plot::*;
 
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            width: 800.,
-            height: 600.,
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins
+            .set(WindowPlugin {
+                window: WindowDescriptor {
+                    width: 800.,
+                    height: 600.,
+                    ..Default::default()
+                },
+                ..default()
+            })
+        )
         .add_plugin(PlotPlugin)
         .add_startup_system(setup)
         .run();
@@ -20,7 +24,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut maybe_font: ResMut<TickLabelFont>,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn(Camera2dBundle::default());
     let font: Handle<Font> = asset_server.load("fonts/Roboto-Bold.ttf");
     maybe_font.maybe_font = Some(font);
 
@@ -45,7 +49,7 @@ fn setup(
     plot.plot_func(easing_func);
 
     let plot_handle = plots.add(plot.clone());
-    commands.spawn().insert(plot_handle);
+    commands.spawn(plot_handle);
 }
 
 // The function is not animated, so we don't use the time variable t.

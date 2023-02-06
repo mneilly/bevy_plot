@@ -1,12 +1,12 @@
 // Import the standard 2d mesh uniforms and set their bind groups
 #import bevy_sprite::mesh2d_view_bind_group
-[[group(0), binding(0)]]
+@group(0) @binding(0)
 var<uniform> view: View;
 
 
-#import bevy_sprite::mesh2d_struct
+//#import bevy_sprite::mesh2d_struct
 
-[[group(1), binding(0)]]
+@group(1) @binding(0)
 var<uniform> mesh: Mesh2d;
 
 type float4 = vec4<f32>;
@@ -14,22 +14,22 @@ type float2 = vec2<f32>;
 
 // The structure of the vertex buffer is as specified in `specialize()`
 struct Vertex {
-    [[location(0)]] position: vec3<f32>;
-    [[location(1)]] ends: vec4<f32>;
-    [[location(2)]] uv: vec2<f32>;
-    [[location(3)]] control: vec4<f32>;
+    @location(0) position: vec3<f32>,
+    @location(1) ends: vec4<f32>,
+    @location(2) uv: vec2<f32>,
+    @location(3) control: vec4<f32>,
 };
 
 struct VertexOutput {
     // The vertex shader must set the on-screen position of the vertex
-    [[builtin(position)]] clip_position: vec4<f32>;
+    @builtin(position) clip_position: vec4<f32>,
     // We pass the vertex color to the framgent shader in location 0
-    [[location(0)]] ends: vec4<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] control: vec4<f32>;
+    @location(0) ends: vec4<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) control: vec4<f32>,
 };
 
-[[stage(vertex)]]
+@vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
 
     var out: VertexOutput;
@@ -66,9 +66,9 @@ fn toLinear(sRGB: float4) -> float4
 
 
 struct FragmentInput {
-    [[location(0)]] ends: vec4<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] control: vec4<f32>;
+    @location(0) ends: vec4<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) control: vec4<f32>,
 };
 
 fn cla(mi: f32, ma: f32, x: f32) -> f32 {
@@ -122,21 +122,21 @@ fn sdRoundedBox(p: vec2<f32>, b: vec2<f32>, r: vec4<f32>) -> f32 {
 
 
 struct SegmentUniform {
-  color: float4;
-    mech: f32;
-    segment_thickness: f32;
-    hole_size: f32;
-    zoom: f32;
-    inner_canvas_size_in_pixels: float2;
-    canvas_position_in_pixels: float2;    
+  color: float4,
+    mech: f32,
+    segment_thickness: f32,
+    hole_size: f32,
+    zoom: f32,
+    inner_canvas_size_in_pixels: float2,
+    canvas_position_in_pixels: float2,
 };
 
-[[group(2), binding(0)]]
+@group(2) @binding(0)
 var<uniform> uni: SegmentUniform;
 
 
-[[stage(fragment)]]
-fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
+@fragment
+fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
   
     let width = 1.0 ;
 

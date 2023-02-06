@@ -1,6 +1,6 @@
 use bevy::{
-    core::FloatOrd,
-    core_pipeline::Transparent2d,
+    utils::FloatOrd,
+    core_pipeline::core_2d::Transparent2d,
     ecs::system::lifetimeless::{Read, SQuery, SRes},
     ecs::system::SystemParamItem,
     prelude::*,
@@ -8,13 +8,13 @@ use bevy::{
     render::{
         mesh::{GpuBufferInfo, MeshVertexBufferLayout},
         render_asset::RenderAssets,
-        render_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
-        render_component::{ExtractComponent, ExtractComponentPlugin},
+        extract_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
+        extract_component::{ExtractComponent, ExtractComponentPlugin},
         render_phase::{
             AddRenderCommand, DrawFunctions, EntityRenderCommand, RenderCommandResult, RenderPhase,
             SetItemPipeline, TrackedRenderPass,
         },
-        render_resource::{std140::AsStd140, *},
+        render_resource::{encase::ShaderType, *},
         renderer::RenderDevice,
         view::VisibleEntities,
         view::{ComputedVisibility, Msaa, Visibility},
@@ -79,7 +79,7 @@ fn plot_points(
         let quad_size = 30.0;
 
         commands
-            .spawn_bundle((
+            .spawn((
                 Mesh2dHandle(meshes.add(Mesh::from(shape::Quad {
                     size: Vec2::splat(quad_size),
                     flip: false,
@@ -135,7 +135,7 @@ impl ExtractComponent for MarkerInstanceMatData {
 pub(crate) struct MarkerMesh2d;
 
 /// Uniform sent to markers.wgsl
-#[derive(Component, Clone, AsStd140)]
+#[derive(Component, Clone, ShaderType)]
 pub(crate) struct MarkerUniform {
     pub marker_size: f32,
     /// When the ```marker_point_color``` field is different from the ```color``` field,
@@ -168,6 +168,7 @@ struct MarkerInstanceData {
 }
 
 /// Custom pipeline for 2d meshes with vertex colors
+#[derive(Resource)]
 pub(crate) struct MarkerMesh2dPipeline {
     /// this pipeline wraps the standard [`Mesh2dPipeline`]
     mesh2d_pipeline: Mesh2dPipeline,
@@ -191,7 +192,7 @@ impl FromWorld for MarkerMesh2dPipeline {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: true,
                         min_binding_size: BufferSize::new(
-                            MarkerUniform::std140_size_static() as u64
+                            u64::from(MarkerUniform::SHADER_SIZE)
                         ),
                     },
                     count: None,
@@ -279,6 +280,7 @@ type DrawMarkerMesh2d = (
 
 pub(crate) struct MarkerMesh2dPlugin;
 
+#[derive(Resource)]
 pub(crate) struct MarkerShaderHandle(pub Handle<Shader>);
 
 pub const MARKER_SHADER_HANDLE: HandleUntyped =
@@ -322,7 +324,7 @@ fn extract_colored_mesh2d(
 ) {
     let mut values = Vec::with_capacity(*previous_len);
     for (entity, custom_uni, computed_visibility) in query.iter() {
-        if !computed_visibility.is_visible {
+        if !computed_visibility.is_visible() {
             continue;
         }
         values.push((entity, (custom_uni.clone(), MarkerMesh2d)));
@@ -349,6 +351,7 @@ fn prepare_instance_buffers(
     }
 }
 
+#[derive(Resource)]
 struct MarkerUniformBindGroup {
     pub value: BindGroup,
 }

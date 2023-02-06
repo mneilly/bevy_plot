@@ -1,20 +1,19 @@
 use bevy::{
-    core::FloatOrd,
-    core_pipeline::Transparent2d,
+    utils::FloatOrd,
+    core_pipeline::core_2d::Transparent2d,
     ecs::system::lifetimeless::{Read, SQuery, SRes},
     ecs::system::SystemParamItem,
     prelude::*,
     reflect::TypeUuid,
-    // reflect::TypeUuid,
     render::{
         mesh::{Indices, MeshVertexAttribute, MeshVertexBufferLayout},
         render_asset::RenderAssets,
-        render_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
+        extract_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
         render_phase::{
             AddRenderCommand, DrawFunctions, EntityRenderCommand, RenderCommandResult, RenderPhase,
             SetItemPipeline, TrackedRenderPass,
         },
-        render_resource::{std140::AsStd140, *},
+        render_resource::{encase::ShaderType, *},
         renderer::RenderDevice,
         texture::BevyDefault,
         texture::GpuImage,
@@ -26,7 +25,7 @@ use bevy::{
         SetMesh2dBindGroup, SetMesh2dViewBindGroup,
     },
 };
-
+use bevy::asset::HandleUntyped;
 use crate::plot::*;
 use crate::util::*;
 
@@ -115,7 +114,7 @@ pub(crate) fn make_df(xs: &Vec<f32>, time: f32, f: &fn(f32, f32) -> f32) -> (Vec
 }
 
 /// Uniform sent to bezier_spline.wgsl
-#[derive(Component, Clone, AsStd140)]
+#[derive(Component, Clone, ShaderType)]
 pub(crate) struct BezierCurveUniform {
     /// If set to > 0.5, the curve will be split into mechanical joints, but it's just a look
     pub mech: f32,
@@ -180,7 +179,7 @@ pub(crate) fn spawn_bezier_function(
     // for event in spawn_beziercurve_event.iter() {
     for event in spawn_beziercurve_event.iter() {
         //
-        if let Some(mut plot) = plots.get_mut(event.plot_handle.clone()) {
+        if let Some(mut plot) = plots.get_mut(&event.plot_handle.clone()) {
             //
             // remove all the bezier curves
             // TODO: currently runs proportionally to curve_number^2. Optimize
@@ -242,7 +241,7 @@ fn plot_fn(
 
         let num_pts = plot.bezier_num_points;
 
-        let t = time.seconds_since_startup() as f32;
+        let t = time.elapsed_seconds();
         let ys = xs
             .iter()
             .map(|x| Vec2::new(*x, func(*x, t)))
@@ -447,6 +446,7 @@ fn plot_fn(
 #[derive(Component, Default)]
 pub(crate) struct BezierMesh2d;
 
+#[derive(Resource)]
 struct BezierMesh2dPipeline {
     // pub view_layout: BindGroupLayout,
     // pub mesh_layout: BindGroupLayout,
@@ -473,7 +473,7 @@ impl FromWorld for BezierMesh2dPipeline {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: true,
                         min_binding_size: BufferSize::new(
-                            BezierCurveUniform::std140_size_static() as u64
+                            BezierCurveUniform::min_size().into()
                         ),
                     },
                     count: None,
@@ -549,11 +549,11 @@ impl SpecializedRenderPipeline for BezierMesh2dPipeline {
                 shader: key.shader_handle.clone(),
                 shader_defs: Vec::new(),
                 entry_point: "fragment".into(),
-                targets: vec![ColorTargetState {
+                targets: vec![Some(ColorTargetState {
                     format: TextureFormat::bevy_default(),
                     blend: Some(BlendState::ALPHA_BLENDING),
                     write_mask: ColorWrites::ALL,
-                }],
+                })],
             }),
             // Use the two standard uniforms for 2d meshes
             layout: Some(vec![
@@ -641,6 +641,7 @@ type DrawBezierMesh2d = (
 /// Plugin that renders [`BezierMesh2d`]s
 pub(crate) struct BezierMesh2dPlugin;
 
+#[derive(Resource)]
 pub(crate) struct BezierShaderHandle(pub Handle<Shader>);
 
 pub const BEZIER_SHADER_HANDLE: HandleUntyped =
@@ -681,7 +682,7 @@ fn extract_colored_mesh2d(
 ) {
     let mut values = Vec::with_capacity(*previous_len);
     for (entity, custom_uni, computed_visibility) in query.iter() {
-        if !computed_visibility.is_visible {
+        if !computed_visibility.is_visible() {
             continue;
         }
         values.push((entity, (custom_uni.clone(), BezierMesh2d)));
@@ -691,6 +692,7 @@ fn extract_colored_mesh2d(
 }
 
 /// I can't make this private because it's tied to BezierCurveUniform, which is public
+#[derive(Resource)]
 struct BezierCurveUniformBindGroup {
     value: BindGroup,
 }

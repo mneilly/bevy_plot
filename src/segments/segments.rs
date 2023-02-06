@@ -1,6 +1,6 @@
 use bevy::{
-    core::FloatOrd,
-    core_pipeline::Transparent2d,
+    utils::FloatOrd,
+    core_pipeline::core_2d::Transparent2d,
     ecs::system::lifetimeless::{Read, SQuery, SRes},
     ecs::system::SystemParamItem,
     prelude::*,
@@ -8,12 +8,12 @@ use bevy::{
     render::{
         mesh::{Indices, MeshVertexAttribute, MeshVertexBufferLayout},
         render_asset::RenderAssets,
-        render_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
+        extract_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
         render_phase::{
             AddRenderCommand, DrawFunctions, EntityRenderCommand, RenderCommandResult, RenderPhase,
             SetItemPipeline, TrackedRenderPass,
         },
-        render_resource::{std140::AsStd140, *},
+        render_resource::{encase::ShaderType, *},
         renderer::RenderDevice,
         view::VisibleEntities,
         RenderApp, RenderStage,
@@ -220,7 +220,7 @@ fn plot_segments(
 pub(crate) struct SegmentMesh2d;
 
 /// Shader uniform parameters sent to segments.wgsl.
-#[derive(Component, Clone, AsStd140)]
+#[derive(Component, Clone, ShaderType)]
 pub(crate) struct SegmentUniform {
     pub color: Vec4,
     /// gives segments a mechanical joint look if > 0.5
@@ -233,6 +233,7 @@ pub(crate) struct SegmentUniform {
     pub canvas_position: Vec2,
 }
 
+#[derive(Resource)]
 struct SegmentMesh2dPipeline {
     pub view_layout: BindGroupLayout,
     pub mesh_layout: BindGroupLayout,
@@ -259,7 +260,7 @@ impl FromWorld for SegmentMesh2dPipeline {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: true,
                         min_binding_size: BufferSize::new(
-                            SegmentUniform::std140_size_static() as u64
+                            u64::from(SegmentUniform::SHADER_SIZE)
                         ),
                     },
                     count: None,
@@ -348,11 +349,11 @@ impl SpecializedMeshPipeline for SegmentMesh2dPipeline {
                 shader: key.shader_handle.clone(),
                 shader_defs: Vec::new(),
                 entry_point: "fragment".into(),
-                targets: vec![ColorTargetState {
+                targets: vec![Some(ColorTargetState {
                     format: TextureFormat::bevy_default(),
                     blend: Some(BlendState::ALPHA_BLENDING),
                     write_mask: ColorWrites::ALL,
-                }],
+                })],
             }),
             // Use the two standard uniforms for 2d meshes
             layout: Some(vec![
@@ -400,6 +401,7 @@ type DrawSegmentMesh2d = (
 /// Plugin that renders [`SegmentMesh2d`]s
 pub(crate) struct SegmentMesh2dPlugin;
 
+#[derive(Resource)]
 pub(crate) struct SegmentShaderHandle(pub Handle<Shader>);
 
 pub const SEGMENT_SHADER_HANDLE: HandleUntyped = HandleUntyped::weak_from_u64(
@@ -441,7 +443,7 @@ fn extract_colored_mesh2d(
 ) {
     let mut values = Vec::with_capacity(*previous_len);
     for (entity, custom_uni, computed_visibility) in query.iter() {
-        if !computed_visibility.is_visible {
+        if !computed_visibility.is_visible() {
             continue;
         }
         values.push((entity, (custom_uni.clone(), SegmentMesh2d)));
@@ -450,6 +452,7 @@ fn extract_colored_mesh2d(
     commands.insert_or_spawn_batch(values);
 }
 
+#[derive(Resource)]
 struct SegmentUniformBindGroup {
     value: BindGroup,
 }

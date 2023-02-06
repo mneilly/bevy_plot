@@ -1,43 +1,43 @@
-#import bevy_sprite::mesh2d_view_bind_group
-[[group(0), binding(0)]]
+#import bevy_sprite::mesh2d_view_bindings
+@group(0) @binding(0)
 var<uniform> view: View;
 
-#import bevy_sprite::mesh2d_struct
-[[group(1), binding(0)]]
+//#import bevy_sprite::mesh2d_struct
+@group(1) @binding(0)
 var<uniform> mesh: Mesh2d;
 
 type float4 = vec4<f32>;
 type float2 = vec2<f32>;
 
 struct BezierCurveUniform {
-    mech: f32;
-    zoom: f32;
-    inner_canvas_size_in_pixels: float2;
-    canvas_position_in_pixels: float2;
-    color: float4;
-    size: f32;
-    dummy: f32;
-    style: i32;
+    mech: f32,
+    zoom: f32,
+    inner_canvas_size_in_pixels: float2,
+    canvas_position_in_pixels: float2,
+    color: float4,
+    size: f32,
+    dummy: f32,
+    style: i32,
 };
 
-[[group(2), binding(0)]]
+@group(2) @binding(0)
 var<uniform> bez_uni: BezierCurveUniform;
 
 // The structure of the vertex buffer is as specified in `specialize()`
 struct Vertex {
-    [[location(0)]] position: vec3<f32>;
-    [[location(1)]] ends: vec4<f32>;
-    [[location(2)]] uv: vec2<f32>;
-    [[location(3)]] control: vec4<f32>;
+    @location(0) position: vec3<f32>,
+    @location(1) ends: vec4<f32>,
+    @location(2) uv: vec2<f32>,
+    @location(3) control: vec4<f32>,
 };
 struct VertexOutput {
-    [[builtin(position)]] clip_position: vec4<f32>;
-    [[location(0)]] ends: vec4<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] control: vec4<f32>;
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) ends: vec4<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) control: vec4<f32>,
 };
 /// Entry point for the vertex shader
-[[stage(vertex)]]
+@vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
     // Project the world position of the mesh into screen position
@@ -69,9 +69,9 @@ fn toLinear(sRGB: float4) -> float4
 
 
 struct FragmentInput {
-    [[location(0)]] ends: vec4<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] control: vec4<f32>;
+    @location(0) ends: vec4<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) control: vec4<f32>,
 };
 
 
@@ -191,8 +191,8 @@ fn tips(uv: float2, m_in: float4, dy: float2, solid: f32, w: f32 ) -> float4 {
     return m;
 }
 
-[[stage(fragment)]]
-fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
+@fragment
+fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     let width = bez_uni.size / 1.0;
     // let w = 1.0 + width * bez_uni.zoom  * 1.0;
     // let solid = width * bez_uni.zoom ;
